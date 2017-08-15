@@ -5,7 +5,7 @@ void main (){
     while(fb_start < fb_end)
     {
         *(fb_start)  = (0xF)<<4 | (0xD);
-        *(fb_start + 1) = '#';
+        *(fb_start + 1) = ' ';
         fb_start += 2;
     }
     

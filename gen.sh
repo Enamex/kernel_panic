@@ -1,15 +1,5 @@
 #!/bin/bash
 
-loopbackDevice=/dev/loop2
-mountDir=/media/hasebou/MY_OS/
-
-function clean {
-	#clean up
-	rm build/*
-	umount "$mountDir"
-	losetup -d $loopbackDevice
-}
-
 function check {
 	if [ $? -ne 0 ]
 	then
@@ -33,22 +23,16 @@ check
 dd if=/dev/zero of=build/floppy.img bs=512 count=2880
 
 check
-losetup $loopbackDevice build/floppy.img
-
-check
-mkdosfs -n 'MY_OS' -F 12 $loopbackDevice 
+mkdosfs -F 12 build/floppy.img
 
 check
 dd if=build/Boot1.bin of=build/floppy.img bs=512 count=1 conv=notrunc
 
 check
-cp --no-preserve=mode  build/KRNLDR.SYS $mountDir
+mcopy -i build/floppy.img build/KRNLDR.SYS ::/KRNLDR.SYS
 check
-cp --no-preserve=mode  build/KRNL32.EXE $mountDir
+mcopy -i build/floppy.img build/KRNL32.EXE ::/KRNL32.EXE
 check
 
 
 sudo bochs -f bochsrc.txt -q
-
-umount /media/hasebou/MY_OS
-losetup -d /dev/loop2
