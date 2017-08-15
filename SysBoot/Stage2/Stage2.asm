@@ -162,19 +162,19 @@ CopyImage:
 	;-----------------------------------------------;
 
 TestImage:
-#  	  mov    ebx, [IMAGE_PMODE_BASE]
+  	  ;mov    ebx, [IMAGE_PMODE_BASE+60]
   	  mov    ebx, IMAGE_PMODE_BASE    ; ebx now points to file sig (PE00)
   	  mov    esi, ebx
   	  mov    edi, ImageSig
   	  cmpsd
-  	  jmp     EXECUTE
+  	  je     EXECUTE
   	  mov	ebx, BadImage
   	  call	Puts32
   	  cli
   	  hlt
 
 ImageSig db 0x7F, 0x45, 0x4c, 0x46
-
+memLoc dd 0x101000
 EXECUTE:
 
 	;---------------------------------------;
@@ -184,15 +184,14 @@ EXECUTE:
  	; parse the programs header info structures to get its entry point
 	; ebx points to _IMAGE_FILE_HEADER
 
-	add		ebx, 0x18
-	mov		ebp, [ebx]
+	mov		ebx, 0x101000
+	mov		ebp, ebx
 	cli
 
-	call		ebp               	      ; Execute Kernel
+	call	ebp
 
     cli
 	hlt
-
 
 ;-- header information format for PE files -------------------
 
