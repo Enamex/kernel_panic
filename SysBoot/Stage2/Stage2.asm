@@ -145,25 +145,44 @@ Stage3:
 	; Copy kernel to 1MB		;
 	;-------------------------------;
 
-CopyImage:
-  	 mov	eax, dword [ImageSize]
-  	 movzx	ebx, word [bpbBytesPerSector]
-  	 mul	ebx
-  	 mov	ebx, 4
-  	 div	ebx
-   	 cld
-   	 mov    esi, IMAGE_RMODE_BASE
-   	 mov	edi, IMAGE_PMODE_BASE
-   	 mov	ecx, eax
-   	 rep	movsd                   ; copy image to its protected mode address
+parseELF:
+	mov		ebx, DWORD [IMAGE_RMODE_BASE + 0x1C]	; get offset of program header
+	movzx	ecx, WORD  [IMAGE_RMODE_BASE + 0x2C]	; get number of header tables
+	add 	ebx, IMAGE_RMODE_BASE					; store location of program header
+	.loadEntry:
+		push ecx							;store number of header files present
+		mov eax, DWORD [ebx]
+		cmp eax, 0x001
+		jne .loopEnd
 
-	;-----------------------------------------------;
-	; Insure its a valid image (test for signiture) ;
-	;-----------------------------------------------;
+		mov edi, DWORD [ebx + 0x0C]
+		mov esi, DWORD [ebx + 0x04] ;source to copy from
+		add esi, IMAGE_RMODE_BASE
+
+		cld
+		mov ecx, DWORD [ebx + 0x10]				;copy file
+		rep movsb
+
+		mov ecx, DWORD [ebx + 0x14]				;get mem size
+		sub ecx, DWORD [ebx + 0x10]				;sub file size
+		cmp ecx, 0x0							;check if zero extra area to init
+		je .loopEnd							
+
+		;setup bss area
+	.bssSetup:
+		mov [edi], BYTE 0x0
+		inc edi
+		loop .bssSetup
+
+
+	.loopEnd:
+		pop ecx
+		movzx eax, WORD [IMAGE_RMODE_BASE + 0x2A] ; get program header entry size
+		add ebx, eax ; point to next program header entry
+		loop .loadEntry
 
 TestImage:
-  	  ;mov    ebx, [IMAGE_PMODE_BASE+60]
-  	  mov    ebx, IMAGE_PMODE_BASE    ; ebx now points to file sig (PE00)
+  	  mov    ebx, IMAGE_RMODE_BASE    ; ebx now points to file sig (PE00)
   	  mov    esi, ebx
   	  mov    edi, ImageSig
   	  cmpsd
@@ -184,7 +203,7 @@ EXECUTE:
  	; parse the programs header info structures to get its entry point
 	; ebx points to _IMAGE_FILE_HEADER
 
-	mov		ebx, 0x101000
+	mov		ebx, DWORD [IMAGE_RMODE_BASE + 0x18]
 	mov		ebp, ebx
 	cli
 
@@ -192,82 +211,3 @@ EXECUTE:
 
     cli
 	hlt
-
-;-- header information format for PE files -------------------
-
-;typedef struct _IMAGE_DOS_HEADER {  // DOS .EXE header
-;    USHORT e_magic;         // Magic number (Should be MZ
-;    USHORT e_cblp;          // Bytes on last page of file
-;    USHORT e_cp;            // Pages in file
-;    USHORT e_crlc;          // Relocations
-;    USHORT e_cparhdr;       // Size of header in paragraphs
-;    USHORT e_minalloc;      // Minimum extra paragraphs needed
-;    USHORT e_maxalloc;      // Maximum extra paragraphs needed
-;    USHORT e_ss;            // Initial (relative) SS value
-;    USHORT e_sp;            // Initial SP value
-;    USHORT e_csum;          // Checksum
-;    USHORT e_ip;            // Initial IP value
-;    USHORT e_cs;            // Initial (relative) CS value
-;    USHORT e_lfarlc;        // File address of relocation table
-;    USHORT e_ovno;          // Overlay number
-;    USHORT e_res[4];        // Reserved words
-;    USHORT e_oemid;         // OEM identifier (for e_oeminfo)
-;    USHORT e_oeminfo;       // OEM information; e_oemid specific
-;    USHORT e_res2[10];      // Reserved words
-;    LONG   e_lfanew;        // File address of new exe header
-;  } IMAGE_DOS_HEADER, *PIMAGE_DOS_HEADER;
-
-;<<------ Real mode stub program -------->>
-
-;<<------ Here is the file signiture, such as PE00 for NT --->>
-
-;typedef struct _IMAGE_FILE_HEADER {
-;    USHORT  Machine;
-;    USHORT  NumberOfSections;
-;    ULONG   TimeDateStamp;
-;    ULONG   PointerToSymbolTable;
-;    ULONG   NumberOfSymbols;
-;    USHORT  SizeOfOptionalHeader;
-;    USHORT  Characteristics;
-;} IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER;
-
-;struct _IMAGE_OPTIONAL_HEADER {
-;    //
-;    // Standard fields.
-;    //
-;    USHORT  Magic;
-;    UCHAR   MajorLinkerVersion;
-;    UCHAR   MinorLinkerVersion;
-;    ULONG   SizeOfCode;
-;    ULONG   SizeOfInitializedData;
-;    ULONG   SizeOfUninitializedData;
-;    ULONG   AddressOfEntryPoint;			<< IMPORTANT!
-;    ULONG   BaseOfCode;
-;    ULONG   BaseOfData;
-;    //
-;    // NT additional fields.
-;    //
-;    ULONG   ImageBase;
-;    ULONG   SectionAlignment;
-;    ULONG   FileAlignment;
-;    USHORT  MajorOperatingSystemVersion;
-;    USHORT  MinorOperatingSystemVersion;
-;    USHORT  MajorImageVersion;
-;    USHORT  MinorImageVersion;
-;    USHORT  MajorSubsystemVersion;
-;    USHORT  MinorSubsystemVersion;
-;    ULONG   Reserved1;
-;    ULONG   SizeOfImage;
-;    ULONG   SizeOfHeaders;
-;    ULONG   CheckSum;
-;    USHORT  Subsystem;
-;    USHORT  DllCharacteristics;
-;    ULONG   SizeOfStackReserve;
-;    ULONG   SizeOfStackCommit;
-;    ULONG   SizeOfHeapReserve;
-;    ULONG   SizeOfHeapCommit;
-;    ULONG   LoaderFlags;
-;    ULONG   NumberOfRvaAndSizes;
-;    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
-;} IMAGE_OPTIONAL_HEADER, *PIMAGE_OPTIONAL_HEADER;
-

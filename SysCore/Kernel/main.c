@@ -1,7 +1,8 @@
-void main (){
-    char *fb_start = (char*) 0x000b8000;
-    char *fb_end = (char*) 0x000b87D0;
+int a[100];
+char *fb_start = (char*) 0x000b8000;
+char *fb_end = (char*) 0x000b87D0;
 
+void main (){
     while(fb_start < fb_end)
     {
         *(fb_start)  = (0xF)<<4 | (0xD);

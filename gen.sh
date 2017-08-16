@@ -34,5 +34,4 @@ check
 mcopy -i build/floppy.img build/KRNL32.EXE ::/KRNL32.EXE
 check
 
-
-sudo bochs -f bochsrc.txt -q
+bochs -f bochsrc.txt -q
