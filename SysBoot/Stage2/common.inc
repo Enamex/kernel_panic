@@ -10,8 +10,8 @@
 
 ; kernel name (Must be 11 bytes)
 ImageName     db "KRNL32  EXE"
-                  
 
+                
 ; size of kernel image in bytes
 ImageSize     db 0
 

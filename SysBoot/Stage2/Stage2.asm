@@ -144,7 +144,7 @@ Stage3:
 	;-------------------------------;
 	; Copy kernel to 1MB		;
 	;-------------------------------;
-
+;not that this module can be optimized to copy  1 DWORD at a time instead of 1 BYTE
 parseELF:
 	mov		ebx, DWORD [IMAGE_RMODE_BASE + 0x1C]	; get offset of program header
 	movzx	ecx, WORD  [IMAGE_RMODE_BASE + 0x2C]	; get number of header tables

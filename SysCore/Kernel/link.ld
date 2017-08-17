@@ -1,4 +1,4 @@
-ENTRY(main)                /* the name of the entry label */
+ENTRY(start_kernel)           /* the name of the entry label */
 
 SECTIONS {
     . = 0x00100000;          /* the code should be loaded at 1 MB */

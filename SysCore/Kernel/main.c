@@ -1,16 +1,6 @@
-int a[100];
-char *fb_start = (char*) 0x000b8000;
-char *fb_end = (char*) 0x000b87D0;
+#include "stdio.h"
 
-void main (){
-    while(fb_start < fb_end)
-    {
-        *(fb_start)  = (0xF)<<4 | (0xD);
-        *(fb_start + 1) = ' ';
-        fb_start += 2;
-    }
-    
-
-    // int i = 0;
+void start_kernel(){
+    puts("____________hello  world");
     while(1);
 }
